@@ -1,0 +1,28 @@
+# Node
+node_modules
+.env
+dist
+build
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Vite / React / TypeScript
+frontend/.next/
+frontend/.turbo/
+frontend/node_modules/
+frontend/dist/
+
+# Express / TS Backend
+backend/node_modules/
+backend/dist/
