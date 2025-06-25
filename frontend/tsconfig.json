@@ -24,6 +24,9 @@
     }
   ],
   "compilerOptions": {
+    "jsx": "react-jsx",
+
+    "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
