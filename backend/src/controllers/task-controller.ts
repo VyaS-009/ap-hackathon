@@ -14,16 +14,18 @@ export const createTask = async (req: Request, res: Response) => {
 
 export const getTasksByUser = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
-    console.log(`Fetching tasks for userId: ${userId}`);
-    const tasks = await Task.find({ assignedTo: userId }).populate([
-      "assignedBy",
-      "assignedTo",
-    ]);
-    console.log(`Found ${tasks.length} tasks for userId: ${userId}`);
-    res.json(tasks);
-  } catch (err) {
-    console.error(`Error fetching tasks for userId ${req.params.userId}:`, err);
-    res.status(500).json({ error: "Internal server error" });
+    const userId = req.params.userId;
+    console.log(`Fetching tasks for userId: ${userId}`); // Debugging log
+    const tasks = await Task.find({
+      $or: [{ assignedTo: userId }, { assignedBy: userId }],
+    })
+      .populate("assignedBy", "name")
+      .populate("assignedTo", "name")
+      .populate("groupId", "name");
+    console.log(`Found ${tasks.length} tasks for userId: ${userId}`); // Debugging log
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error("Error fetching tasks:", error);
+    res.status(500).json({ message: "Server error", error });
   }
 };
