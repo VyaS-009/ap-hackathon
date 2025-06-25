@@ -22,6 +22,8 @@ app.use(
 // Middleware
 app.use(express.json());
 
+app.use(cors({ origin: "http://localhost:5173" }));
+
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/groups", groupRoutes);
