@@ -6,11 +6,19 @@ import userRoutes from "./routes/user-routes";
 import groupRoutes from "./routes/group-routes";
 import taskRoutes from "./routes/task-routes";
 import ruleRoutes from "./routes/rule-routes";
+import cors from "cors";
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
-
+// Enable CORS for frontend
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 // Middleware
 app.use(express.json());
 
