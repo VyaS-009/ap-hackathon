@@ -1,80 +1,100 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, model, Model } from "mongoose";
 
-// Interface for Message
+export interface IRole extends Document {
+  name: string;
+}
+
+export interface IUser extends Document {
+  user_id: string;
+  name: string;
+  phone?: string;
+  alias: string;
+  reporting_to?: mongoose.Types.ObjectId;
+  group_memberships: mongoose.Types.ObjectId[];
+  roles?: mongoose.Types.ObjectId;
+  summaries?: mongoose.Types.ObjectId;
+  tasks?: mongoose.Types.ObjectId;
+  rules?: mongoose.Types.ObjectId;
+}
+
+export interface IGroup extends Document {
+  name: string;
+  members: mongoose.Types.ObjectId[];
+}
+
 export interface IMessage extends Document {
   groupId: mongoose.Types.ObjectId;
   senderAlias: string;
-  senderId?: mongoose.Types.ObjectId; // Links to User
+  senderId?: mongoose.Types.ObjectId;
   message: string;
-  timestamp: Date;
-  language: string; // e.g., "en" for English, "te" for Telugu
-  isMedia: boolean; // Flag for media messages
+  timestamp?: Date;
+  isMedia: boolean;
 }
 
-// Interface for User
-export interface IUser extends Document {
-  name: string;
-  role: string;
-  phone?: string;
-  alias: string;
-  groupIds: mongoose.Types.ObjectId[];
-  reportingTo?: mongoose.Types.ObjectId; // Links to User
-  rules?: {
-    summarizeKeywords: string[];
-    prioritize: "high" | "medium" | "low";
-  };
-}
-
-// Interface for Group
-export interface IGroup extends Document {
-  name: string;
-  members: mongoose.Types.ObjectId[]; // Links to User
-}
-
-// Message Schema
-const MessageSchema: Schema = new Schema(
+export const roleSchema = new mongoose.Schema<IRole>(
   {
-    groupId: { type: Schema.Types.ObjectId, ref: "Group", required: true },
+    name: { type: String, required: true, unique: true },
+  },
+  { timestamps: true }
+);
+
+export const userSchema = new mongoose.Schema<IUser>(
+  {
+    user_id: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    phone: { type: String },
+    alias: { type: String, required: true },
+    reporting_to: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    group_memberships: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],
+    roles: { type: mongoose.Schema.Types.ObjectId, ref: "Role", default: null },
+    summaries: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Summary",
+      default: null,
+    },
+    tasks: { type: mongoose.Schema.Types.ObjectId, ref: "Task", default: null },
+    rules: { type: mongoose.Schema.Types.ObjectId, ref: "Rule", default: null },
+  },
+  { timestamps: true, strict: "throw", strictQuery: true }
+);
+
+export const groupSchema = new mongoose.Schema<IGroup>(
+  {
+    name: { type: String, required: true, unique: true },
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  },
+  { timestamps: true }
+);
+
+export const messageSchema = new mongoose.Schema<IMessage>(
+  {
+    groupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Group",
+      required: true,
+    },
     senderAlias: { type: String, required: true },
-    senderId: { type: Schema.Types.ObjectId, ref: "User" },
+    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     message: { type: String, required: true },
-    timestamp: { type: Date, required: true },
-    language: { type: String, default: "en" },
+    timestamp: { type: Date },
     isMedia: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-// User Schema
-const UserSchema: Schema = new Schema(
-  {
-    name: { type: String, required: true },
-    role: { type: String, required: true },
-    phone: { type: String },
-    alias: { type: String, required: true },
-    groupIds: [{ type: Schema.Types.ObjectId, ref: "Group" }],
-    reportingTo: { type: Schema.Types.ObjectId, ref: "User" },
-    rules: {
-      summarizeKeywords: [{ type: String }],
-      prioritize: {
-        type: String,
-        enum: ["high", "medium", "low"],
-        default: "medium",
-      },
-    },
-  },
-  { timestamps: true }
-);
+// Log schema initialization for debugging
+console.log("Initializing Mongoose schemas");
 
-// Group Schema
-const GroupSchema: Schema = new Schema(
-  {
-    name: { type: String, required: true },
-    members: [{ type: Schema.Types.ObjectId, ref: "User" }],
-  },
-  { timestamps: true }
-);
-
-export const Message = mongoose.model<IMessage>("Message", MessageSchema);
-export const User = mongoose.model<IUser>("User", UserSchema);
-export const Group = mongoose.model<IGroup>("Group", GroupSchema);
+// Define models with existence check to prevent OverwriteModelError
+export const Role: Model<IRole> =
+  mongoose.models.Role || model<IRole>("Role", roleSchema);
+export const User: Model<IUser> =
+  mongoose.models.User || model<IUser>("User", userSchema);
+export const Group: Model<IGroup> =
+  mongoose.models.Group || model<IGroup>("Group", groupSchema);
+export const Message: Model<IMessage> =
+  mongoose.models.Message || model<IMessage>("Message", messageSchema);

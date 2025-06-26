@@ -1,47 +1,54 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api"; // Adjust port if your backend runs on a different port
+const API_BASE_URL = "http://localhost:5000/api";
 
 export interface BackendTask {
   _id: string;
   taskText: string;
-  status: "open" | "in progress" | "completed";
+  status: string;
   deadline: string;
   assignedBy: { _id: string; name: string };
   assignedTo: { _id: string; name: string };
   groupId: { _id: string; name: string };
-  messageId: string;
-  completionSignal: string;
 }
 
 export interface BackendGroup {
   _id: string;
   name: string;
-  description: string;
   members: { _id: string; name: string }[];
-  context: string;
 }
 
-// Fetch tasks for a user
+export interface BackendMessage {
+  _id: string;
+  groupId: string;
+  senderAlias: string;
+  senderId?: { _id: string; name: string };
+  message: string;
+  timestamp: string;
+  isMedia: boolean;
+}
+
 export const fetchTasksByUser = async (
   userId: string
 ): Promise<BackendTask[]> => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/tasks/user/${userId}`);
-    return response.data;
-  } catch (error) {
-    console.error("Failed to fetch tasks:", error);
-    throw error;
-  }
+  const response = await axios.get(`${API_BASE_URL}/tasks/user/${userId}`);
+  return response.data;
 };
 
-// Fetch all groups
 export const fetchGroups = async (): Promise<BackendGroup[]> => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/groups`);
-    return response.data;
-  } catch (error) {
-    console.error("Failed to fetch groups:", error);
-    throw error;
-  }
+  const response = await axios.get(`${API_BASE_URL}/chats/groups`);
+  return response.data;
+};
+
+export const fetchMessagesByGroup = async (
+  groupId: string
+): Promise<BackendMessage[]> => {
+  const response = await axios.get(`${API_BASE_URL}/chats/group/${groupId}`);
+  return response.data;
+};
+
+export const uploadFiles = async (formData: FormData): Promise<void> => {
+  await axios.post(`${API_BASE_URL}/chats/parse`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 };

@@ -7,7 +7,7 @@ import groupRoutes from "./routes/group-routes";
 import taskRoutes from "./routes/task-routes";
 import ruleRoutes from "./routes/rule-routes";
 import chatRoutes from "./routes/chat-routes";
-
+// import mongoose from "mongoose";
 import cors from "cors";
 
 dotenv.config();
@@ -21,6 +21,14 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// // Clear Mongoose model cache in development
+// if (process.env.NODE_ENV === "development") {
+//   // mongoose.models = {}; // Removed because 'models' is read-only
+//   mongoose.modelSchemas = {};
+//   console.log("Cleared Mongoose model cache");
+// }
+
 // Middleware
 app.use(express.json());
 
