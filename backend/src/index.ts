@@ -6,6 +6,8 @@ import userRoutes from "./routes/user-routes";
 import groupRoutes from "./routes/group-routes";
 import taskRoutes from "./routes/task-routes";
 import ruleRoutes from "./routes/rule-routes";
+import chatRoutes from "./routes/chat-routes";
+
 import cors from "cors";
 
 dotenv.config();
@@ -29,6 +31,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/rules", ruleRoutes);
+app.use("/api/chats", chatRoutes);
 
 // DB Connection
 connectDB().then(() => {
