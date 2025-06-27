@@ -7,7 +7,8 @@ import groupRoutes from "./routes/group-routes";
 import taskRoutes from "./routes/task-routes";
 import ruleRoutes from "./routes/rule-routes";
 import chatRoutes from "./routes/chat-routes";
-// import mongoose from "mongoose";
+import { User } from "./models/schemas";
+import mongoose from "mongoose";
 import cors from "cors";
 
 dotenv.config();
@@ -40,6 +41,13 @@ app.use("/api/groups", groupRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/rules", ruleRoutes);
 app.use("/api/chats", chatRoutes);
+
+// Clear Mongoose model cache
+mongoose.deleteModel("User");
+console.log("Cleared Mongoose model cache for User");
+
+// Log User schema fields to verify
+console.log("User schema fields:", Object.keys(User.schema.paths));
 
 // DB Connection
 connectDB().then(() => {

@@ -135,7 +135,6 @@ export class ChatParser {
             isMedia,
           });
         } else {
-          // Lenient regex to capture messages without strict timestamp validation
           const lenientRegex = /^(.+?)\s*-\s*([^:]+):\s*(.+)$/;
           const lenientMatch = line.match(lenientRegex);
           if (lenientMatch) {
@@ -305,6 +304,9 @@ export class ChatParser {
       );
 
       console.log(`Parsed ${members.length} group members`);
+      console.log(
+        `Raw roles from CSV: ${members.map((m) => m.role).join(", ")}`
+      );
       return members;
     } catch (error: any) {
       console.error("parseGroupMembers error:", {
@@ -318,6 +320,7 @@ export class ChatParser {
 
   static async parseHierarchy(filePath: string): Promise<Hierarchy[]> {
     try {
+      console.log("inside hierarchy:", filePath);
       const content = await fs.readFile(filePath, "utf-8").catch((err) => {
         throw new Error(
           `Failed to read hierarchy file ${filePath}: ${err.message}`
@@ -329,6 +332,7 @@ export class ChatParser {
 
       function flattenReports(record: any, parentName?: string) {
         const userId = record.name || record.userId;
+        console.log("user inside hierarchy:", userId);
         if (!userId) {
           console.warn(`Invalid hierarchy record: ${JSON.stringify(record)}`);
           throw new Error(
@@ -338,6 +342,7 @@ export class ChatParser {
           );
         }
 
+        console.log("parentName:", parentName);
         if (parentName) {
           hierarchy.push({
             userId: userId.trim(),
@@ -368,7 +373,16 @@ export class ChatParser {
         flattenReports(record);
       }
 
-      console.log(`Parsed ${hierarchy.length} hierarchy records`);
+      if (hierarchy.length === 0) {
+        console.warn("No hierarchy records found in the file");
+        throw new Error("No valid hierarchy records found");
+      }
+
+      console.log(
+        `Parsed ${hierarchy.length} hierarchy records: ${JSON.stringify(
+          hierarchy
+        )}`
+      );
       return hierarchy;
     } catch (error: any) {
       console.error("parseHierarchy error:", {
@@ -382,6 +396,12 @@ export class ChatParser {
 
   async saveMetadata(): Promise<void> {
     try {
+      // Log User schema fields at runtime
+      console.log(
+        "User schema fields in saveMetadata:",
+        Object.keys(User.schema.paths)
+      );
+
       const group = (await Group.findOneAndUpdate(
         { name: this.groupName },
         { name: this.groupName, members: [] },
@@ -400,12 +420,15 @@ export class ChatParser {
       const roleDocs: Map<string, HydratedDocument<IRole>> = new Map();
 
       // Log unique roles for debugging
-      const uniqueRoles = [...new Set(this.teamMembers.map((m) => m.role))];
-      console.log(`Unique roles found: ${uniqueRoles.join(", ")}`);
+      const uniqueRoles = [
+        ...new Set(this.teamMembers.map((m) => m.role.toLowerCase())),
+      ];
+      console.log(`Unique roles found (normalized): ${uniqueRoles.join(", ")}`);
 
       // Create or find roles
       for (const member of this.teamMembers) {
-        let roleDoc = roleDocs.get(member.role);
+        const roleKey = member.role.toLowerCase();
+        let roleDoc = roleDocs.get(roleKey);
         if (!roleDoc) {
           roleDoc = (await Role.findOneAndUpdate(
             { name: member.role },
@@ -416,7 +439,7 @@ export class ChatParser {
               `Failed to save role ${member.role}: ${err.message}`
             );
           })) as HydratedDocument<IRole>;
-          roleDocs.set(member.role, roleDoc);
+          roleDocs.set(roleKey, roleDoc);
         }
       }
       console.log(`Saved or found ${roleDocs.size} roles`);
@@ -425,24 +448,28 @@ export class ChatParser {
       for (const member of this.teamMembers) {
         console.log(`Saving user: ${member.name}, user_id: ${member.name}`);
         const user = await User.findOneAndUpdate(
-          { user_id: member.name }, // Use name as user_id
+          { user_id: member.name },
           {
             user_id: member.name,
             name: member.name,
             phone: member.phone,
             alias: member.alias,
-            roles: roleDocs.get(member.role)?._id,
+            roles: roleDocs.get(member.role.toLowerCase())?._id,
             summaries: null,
             tasks: null,
             rules: null,
-            group_memberships: [this.groupId], // Explicitly set group_memberships
+            group_memberships: [this.groupId],
+            reporting_to: null,
           },
-          { upsert: true, new: true, strict: false } // Disable strict mode for upsert
+          { upsert: true, new: true }
         ).catch((err) => {
           console.error(`Error saving user ${member.name}: ${err.message}`);
           throw new Error(`Failed to save user ${member.name}: ${err.message}`);
         });
         userDocs.push(user);
+        console.log(
+          `User ${user.user_id} group_memberships: ${user.group_memberships}`
+        );
       }
       console.log(`Saved ${userDocs.length} users`);
 
@@ -455,18 +482,48 @@ export class ChatParser {
         );
       });
 
+      // Log userDocs for debugging hierarchy
+      console.log(
+        `userDocs for hierarchy: ${JSON.stringify(
+          userDocs.map((u) => ({ user_id: u.get("user_id"), _id: u._id }))
+        )}`
+      );
+
       // Apply hierarchy
+      console.log(`Applying hierarchy for ${this.hierarchy.length} records`);
       for (const h of this.hierarchy) {
-        const user = userDocs.find((u) => u.user_id === h.userId);
-        const reportingTo = userDocs.find((u) => u.user_id === h.reportingTo);
+        const user = userDocs.find((u) => u.get("user_id") === h.userId);
+        const reportingTo = h.reportingTo
+          ? userDocs.find((u) => u.get("user_id") === h.reportingTo)
+          : null;
         if (user) {
-          await User.findByIdAndUpdate(user._id, {
-            $set: { reporting_to: reportingTo?._id || null },
-          }).catch((err) => {
-            throw new Error(
-              `Failed to update hierarchy for user ${h.userId}: ${err.message}`
+          if (reportingTo) {
+            console.log(
+              `Setting reporting_to for ${h.userId} to ${h.reportingTo} (ID: ${reportingTo._id})`
             );
-          });
+            const updatedUser = await User.findByIdAndUpdate(
+              user._id,
+              { $set: { reporting_to: reportingTo._id } },
+              { new: true }
+            ).catch((err) => {
+              throw new Error(
+                `Failed to update hierarchy for user ${h.userId}: ${err.message}`
+              );
+            });
+            // Verify update
+            const verifiedUser = await User.findById(user._id).lean();
+            console.log(
+              `Updated user ${h.userId} reporting_to: ${JSON.stringify(
+                verifiedUser?.reporting_to
+              )}`
+            );
+          } else if (h.reportingTo) {
+            console.warn(
+              `Reporting_to user not found for hierarchy: ${h.userId} -> ${h.reportingTo}`
+            );
+          } else {
+            console.log(`No reporting_to for ${h.userId} (top-level user)`);
+          }
         } else {
           console.warn(`User not found for hierarchy: ${h.userId}`);
         }
