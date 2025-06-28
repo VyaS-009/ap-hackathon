@@ -2,8 +2,6 @@ import {
   Home,
   FileText,
   Users,
-  Settings,
-  Bell,
   Shield,
   UserCheck,
   CheckSquare,
