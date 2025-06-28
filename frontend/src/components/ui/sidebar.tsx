@@ -1,8 +1,20 @@
-import { Home, Users, BarChart3, Settings, Bell, Shield, Radio, Car } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import {
+  Home,
+  FileText,
+  Users,
+  Settings,
+  Bell,
+  Shield,
+  UserCheck,
+  CheckSquare,
+  LogOut,
+} from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   return (
     <div className="w-16 bg-slate-900 flex flex-col items-center py-6 space-y-6">
@@ -11,36 +23,57 @@ const Sidebar: React.FC = () => {
       </div>
       <div className="flex flex-col space-y-4">
         <div
-          className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center cursor-pointer"
-          onClick={() => navigate('/dashboard')}
+          className={`w-10 h-10 ${
+            currentPath === "/dashboard" ? "bg-blue-600" : "hover:bg-slate-800"
+          } rounded-lg flex items-center justify-center cursor-pointer`}
+          onClick={() => navigate("/dashboard")}
         >
           <Home className="w-5 h-5 text-white" />
         </div>
-        <div className="w-10 h-10 hover:bg-slate-800 rounded-lg flex items-center justify-center cursor-pointer"
-          onClick={() => navigate('/task-allocation')}
+        <div
+          className={`w-10 h-10 ${
+            currentPath === "/summarizer" ? "bg-blue-600" : "hover:bg-slate-800"
+          } rounded-lg flex items-center justify-center cursor-pointer`}
+          onClick={() => navigate("/summarizer")}
         >
-          <Users className="w-5 h-5 text-slate-400" />
+          <FileText className="w-5 h-5 text-white" />
         </div>
-        <div className="w-10 h-10 hover:bg-slate-800 rounded-lg flex items-center justify-center cursor-pointer">
-          <BarChart3 className="w-5 h-5 text-slate-400" />
+        <div
+          className={`w-10 h-10 ${
+            currentPath === "/task-allocated"
+              ? "bg-blue-600"
+              : "hover:bg-slate-800"
+          } rounded-lg flex items-center justify-center cursor-pointer`}
+          onClick={() => navigate("/task-allocated")}
+        >
+          <UserCheck className="w-5 h-5 text-white" />
         </div>
-        <div className="w-10 h-10 hover:bg-slate-800 rounded-lg flex items-center justify-center cursor-pointer">
-          <Radio className="w-5 h-5 text-slate-400" />
+        <div
+          className={`w-10 h-10 ${
+            currentPath === "/my-tasks" ? "bg-blue-600" : "hover:bg-slate-800"
+          } rounded-lg flex items-center justify-center cursor-pointer`}
+          onClick={() => navigate("/my-tasks")}
+        >
+          <CheckSquare className="w-5 h-5 text-white" />
         </div>
-        <div className="w-10 h-10 hover:bg-slate-800 rounded-lg flex items-center justify-center cursor-pointer">
-          <Car className="w-5 h-5 text-slate-400" />
+        <div
+          className={`w-10 h-10 ${
+            currentPath === "/team-directory"
+              ? "bg-blue-600"
+              : "hover:bg-slate-800"
+          } rounded-lg flex items-center justify-center cursor-pointer`}
+          onClick={() => navigate("/team-directory")}
+        >
+          <Users className="w-5 h-5 text-white" />
         </div>
       </div>
       <div className="flex-1"></div>
       <div className="flex flex-col space-y-4">
-        <div className="w-10 h-10 hover:bg-slate-800 rounded-lg flex items-center justify-center cursor-pointer">
-          <Settings className="w-5 h-5 text-slate-400" />
-        </div>
-        <div className="$w-10 h-10 hover:bg-slate-800 rounded-lg flex items-center justify-center cursor-pointer relative">
-          <Bell className="w-5 h-5 text-slate-400" />
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-            <span className="text-xs text-white">3</span>
-          </div>
+        <div
+          className="w-10 h-10 hover:bg-slate-800 rounded-lg flex items-center justify-center cursor-pointer relative"
+          onClick={() => navigate("/login")}
+        >
+          <LogOut className="w-5 h-5 text-slate-400" />
         </div>
       </div>
     </div>
