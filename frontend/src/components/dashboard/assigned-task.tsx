@@ -1,4 +1,5 @@
 import { Clock } from "lucide-react";
+import { Link } from 'react-router-dom'; 
 
 interface Task {
   id: number;
@@ -17,9 +18,15 @@ interface MyAssignedTasksProps {
 const MyAssignedTasks: React.FC<MyAssignedTasksProps> = ({ tasks }) => {
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm h-auto">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        My Assigned Tasks
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">My Assigned Tasks</h2>
+                <Link
+                    to="/task-allocation"
+                    className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                    View All
+                </Link>
+            </div>
       <div className="space-y-4">
         {tasks.map((task) => (
           <div
