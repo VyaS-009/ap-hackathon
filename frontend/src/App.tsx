@@ -5,6 +5,7 @@ import SignUp from "./pages/sign-up/sign-up";
 // import { Button } from "@/components/ui/button";
 import Dashboard from "@/pages/dashboard";
 import TaskAllocationPage from "./pages/task-allocation";
+import Summarizer from "./pages/summarizer";
 
 function App() {
   return (
@@ -13,8 +14,8 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/dashboard" element={<Dashboard />} />
-         <Route path="/task-allocation" element={<TaskAllocationPage />} />
-
+        <Route path="/task-allocation" element={<TaskAllocationPage />} />
+        <Route path="/summarizer" element={<Summarizer />} />
       </Routes>
     </Router>
   );

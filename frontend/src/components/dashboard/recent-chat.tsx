@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'; // Assuming React Router is used
+
 interface ChatSummary {
     id: number;
     chatName: string;
@@ -14,7 +16,15 @@ interface RecentChatSummariesProps {
 const RecentChatSummaries: React.FC<RecentChatSummariesProps> = ({ summaries }) => {
     return (
         <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Chat Summaries</h2>
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Recent Chat Summaries</h2>
+                <Link
+                    to="/task-allocation"
+                    className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                    View All
+                </Link>
+            </div>
             <div className="space-y-4">
                 {summaries.map((summary) => (
                     <div key={summary.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
