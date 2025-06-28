@@ -38,11 +38,11 @@ const Sidebar: React.FC = () => {
         </div>
         <div
           className={`w-10 h-10 ${
-            currentPath === "/task-allocated"
+            currentPath === "/task-allocation"
               ? "bg-blue-600"
               : "hover:bg-slate-800"
           } rounded-lg flex items-center justify-center cursor-pointer`}
-          onClick={() => navigate("/task-allocated")}
+          onClick={() => navigate("/task-allocation")}
         >
           <UserCheck className="w-5 h-5 text-white" />
         </div>
