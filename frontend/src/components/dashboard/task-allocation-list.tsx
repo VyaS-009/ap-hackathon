@@ -1,4 +1,4 @@
-import { UserCheck, MapPin, Clock } from "lucide-react";
+import { UserCheck, MapPin, Clock, Link } from "lucide-react";
 
 interface JuniorTask {
   officer: string;
@@ -17,9 +17,15 @@ const JuniorTaskStatus: React.FC<JuniorTaskStatusProps> = ({ tasks }) => {
   return (
     <div className="lg:col-span-3">
       <div className="bg-white rounded-xl p-6 shadow-sm h-[420px] flex flex-col">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Junior Officers - Task Status
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Junior Officers - Task Status</h2>
+          <Link
+            to="/task-allocation"
+            className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            View All
+          </Link>
+        </div>
         <div className="space-y-3 flex-1 overflow-y-auto pr-5 custom-scrollbar">
           {tasks.map((task, index) => (
             <div
@@ -40,13 +46,12 @@ const JuniorTaskStatus: React.FC<JuniorTaskStatusProps> = ({ tasks }) => {
                 </div>
                 <div className="text-right">
                   <span
-                    className={`text-sm font-medium ${
-                      task.status === "Completed"
+                    className={`text-sm font-medium ${task.status === "Completed"
                         ? "text-green-600"
                         : task.status === "In Progress"
-                        ? "text-blue-600"
-                        : "text-orange-600"
-                    }`}
+                          ? "text-blue-600"
+                          : "text-orange-600"
+                      }`}
                   >
                     {task.status}
                   </span>
@@ -64,13 +69,12 @@ const JuniorTaskStatus: React.FC<JuniorTaskStatusProps> = ({ tasks }) => {
                   </div>
                 </div>
                 <span
-                  className={`text-sm font-medium ${
-                    task.priority === "High"
+                  className={`text-sm font-medium ${task.priority === "High"
                       ? "text-red-600"
                       : task.priority === "Medium"
-                      ? "text-yellow-600"
-                      : "text-green-600"
-                  }`}
+                        ? "text-yellow-600"
+                        : "text-green-600"
+                    }`}
                 >
                   {task.priority}
                 </span>

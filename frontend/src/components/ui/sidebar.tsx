@@ -8,12 +8,12 @@ import {
   LogOut,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-
+ 
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
-
+ 
   return (
     <div className="w-16 bg-slate-900 flex flex-col items-center py-6 space-y-6">
       <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -38,11 +38,11 @@ const Sidebar: React.FC = () => {
         </div>
         <div
           className={`w-10 h-10 ${
-            currentPath === "/task-allocated"
+            currentPath === "/task-allocation"
               ? "bg-blue-600"
               : "hover:bg-slate-800"
           } rounded-lg flex items-center justify-center cursor-pointer`}
-          onClick={() => navigate("/task-allocated")}
+          onClick={() => navigate("/task-allocation")}
         >
           <UserCheck className="w-5 h-5 text-white" />
         </div>
@@ -77,5 +77,5 @@ const Sidebar: React.FC = () => {
     </div>
   );
 };
-
+ 
 export default Sidebar;

@@ -1,6 +1,6 @@
 import MyAssignedTasks from "@/components/dashboard/assigned-task";
 import RecentChatSummaries from "@/components/dashboard/recent-chat";
-import JuniorTaskStatus from "@/components/dashboard/task-allocation";
+import JuniorTaskStatus from "@/components/dashboard/task-allocation-list";
 import TeamDirectory from "@/components/dashboard/team-directory";
 import UserProfile from "@/components/dashboard/user-profile";
 import Header from "@/components/header";
