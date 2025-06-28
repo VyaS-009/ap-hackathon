@@ -1,397 +1,242 @@
-import React, { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Bell,
-  Calendar,
-  CheckCircle2,
-  RefreshCw,
-  AlertCircle,
-  Download,
-  ChevronRight,
-  Settings,
-} from "lucide-react";
-import {
-  fetchTasksByUser,
-  fetchGroups,
-  BackendTask,
-  BackendGroup,
-} from "../api/api";
-import TasksPanel from "../components/dashboard/tasks-panel";
+import MyAssignedTasks from "@/components/dashboard/assigned-task";
+import RecentChatSummaries from "@/components/dashboard/recent-chat";
+import JuniorTaskStatus from "@/components/dashboard/task-allocation";
+import TeamDirectory from "@/components/dashboard/team-directory";
+import UserProfile from "@/components/dashboard/user-profile";
+import Header from "@/components/header";
+import Sidebar from "@/components/ui/sidebar";
 
-// Task interface for frontend, mapped from backend data
+// Types for shared data structures
 interface Task {
-  id: string;
+  id: number;
   title: string;
   description: string;
-  priority: "low" | "medium" | "high";
-  status: "pending" | "in-progress" | "completed" | "overdue";
-  dueDate: string;
-  assignedBy?: string;
-  group: string;
-  progress?: number;
+  priority: 'High' | 'Medium' | 'Low';
+  deadline: string;
+  status: 'In Progress' | 'Pending' | 'Planning' | 'Completed';
+  assignedBy: string;
 }
 
-// Group interface for frontend, mapped from backend data
-interface Group {
-  id: string;
+interface JuniorTask {
+  officer: string;
+  task: string;
+  status: 'In Progress' | 'Completed' | 'Pending';
+  priority: 'High' | 'Medium' | 'Low';
+  location: string;
+  timeAssigned: string;
+}
+
+interface ChatSummary {
+  id: number;
+  chatName: string;
+  summary: string;
+  lastSummarized: string;
+  messageCount: number;
+  priority: 'High' | 'Medium' | 'Low';
+}
+
+interface TeamMember {
+  id: number;
   name: string;
-  color: string;
-  taskCount: number;
-  activeMembers: number;
+  rank: string;
+  badge: string;
+  status: 'On Duty' | 'Available' | 'On Leave';
+  currentTask: string;
+  phone: string;
 }
 
-export default function Dashboard() {
-  const [activeFilter, setActiveFilter] = useState<"today" | "week" | "all">(
-    "all"
-  );
-  const [selectedGroup, setSelectedGroup] = useState<string>("all");
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [sortBy, setSortBy] = useState<"deadline" | "priority">("deadline");
-  const [myTasks, setMyTasks] = useState<Task[]>([]);
-  const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface UserProfileData {
+  name: string;
+  rank: string;
+  badge: string;
+  department: string;
+  station: string;
+  email: string;
+  phone: string;
+  yearsOfService: number;
+  currentStatus: 'On Duty' | 'Available' | 'On Leave';
+  location: string;
+}
 
-  // Use Sita Rao's userId
-  const userId = "685bd1df6009a0c59842e19e"; // Changed to Sita Rao's ID
+const App: React.FC = () => {
+  const currentDate = new Date();
 
-  // Map backend task to frontend Task interface
-  const mapBackendTaskToFrontend = (task: BackendTask): Task => {
-    const isOverdue =
-      new Date(task.deadline) < new Date() && task.status !== "completed";
-    return {
-      id: task._id,
-      title: task.taskText,
-      description: `Task for ${task.groupId.name}`,
-      priority: "medium",
-      status: isOverdue
-        ? "overdue"
-        : task.status === "open"
-        ? "pending"
-        : task.status,
-      dueDate: new Date(task.deadline).toISOString().split("T")[0],
-      assignedBy: task.assignedBy?.name,
-      group: task.groupId.name,
-      progress:
-        task.status === "completed"
-          ? 100
-          : task.status === "in progress"
-          ? 50
-          : 0,
-    };
+  // User Profile Data
+  const userProfile: UserProfileData = {
+    name: 'Senior Inspector Rajesh Malhotra',
+    rank: 'Senior Inspector',
+    badge: 'SI-1001',
+    department: 'City Police Department',
+    station: 'Central Police Station',
+    email: 'rajesh.malhotra@police.gov.in',
+    phone: '+91-9876543200',
+    yearsOfService: 15,
+    currentStatus: 'On Duty',
+    location: 'Command Center',
   };
 
-  // Map backend group to frontend Group interface
-  const mapBackendGroupToFrontend = (
-    group: BackendGroup,
-    tasks: BackendTask[]
-  ): Group => {
-    const colors = [
-      "bg-blue-500",
-      "bg-green-500",
-      "bg-purple-500",
-      "bg-orange-500",
-    ];
-    return {
-      id: group._id,
-      name: group.name,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      taskCount: tasks.filter((task) => task.groupId._id === group._id).length,
-      activeMembers: group.members.length,
-    };
-  };
+  // Junior officers task status
+  const juniorTaskStatus: JuniorTask[] = [
+    { 
+      officer: 'Constable Sharma', 
+      task: 'Patrol Sector A-2', 
+      status: 'In Progress', 
+      priority: 'High',
+      location: 'Commercial District',
+      timeAssigned: '08:00 AM',
+    },
+    { 
+      officer: 'Head Constable Patel', 
+      task: 'Traffic Violation Report', 
+      status: 'Completed', 
+      priority: 'Medium',
+      location: 'Highway Junction',
+      timeAssigned: '09:30 AM',
+    },
+    { 
+      officer: 'Constable Kumar', 
+      task: 'Incident Investigation', 
+      status: 'Pending', 
+      priority: 'High',
+      location: 'Residential Area',
+      timeAssigned: '10:15 AM',
+    },
+    { 
+      officer: 'Constable Singh', 
+      task: 'Document Collection', 
+      status: 'In Progress', 
+      priority: 'Low',
+      location: 'Station House',
+      timeAssigned: '11:00 AM',
+    },
+  ];
 
-  // Fetch data from backend
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const tasks = await fetchTasksByUser(userId);
-        const myTasks = tasks
-          .filter((task) => task.assignedTo._id === userId)
-          .map(mapBackendTaskToFrontend);
-        const assignedTasks = tasks
-          .filter((task) => task.assignedBy._id === userId)
-          .map(mapBackendTaskToFrontend);
-        setMyTasks(myTasks);
-        setAssignedTasks(assignedTasks);
+  // Tasks assigned to senior officer
+  const myAssignedTasks: Task[] = [
+    {
+      id: 1,
+      title: 'Monthly Crime Statistics Review',
+      description: 'Compile and analyze monthly crime data for district report',
+      priority: 'High',
+      deadline: 'Today, 5:00 PM',
+      status: 'In Progress',
+      assignedBy: 'Inspector General',
+    },
+    {
+      id: 2,
+      title: 'Team Performance Evaluation',
+      description: 'Conduct quarterly performance review for junior officers',
+      priority: 'Medium',
+      deadline: 'Tomorrow, 2:00 PM',
+      status: 'Pending',
+      assignedBy: 'Deputy Commissioner',
+    },
+    {
+      id: 3,
+      title: 'Community Outreach Program',
+      description: 'Organize safety awareness session for local schools',
+      priority: 'Low',
+      deadline: 'Next Week',
+      status: 'Planning',
+      assignedBy: 'Station Commander',
+    },
+  ];
 
-        const backendGroups = await fetchGroups();
-        const frontendGroups = backendGroups.map((group) =>
-          mapBackendGroupToFrontend(group, tasks)
-        );
-        setGroups(frontendGroups);
-      } catch (err) {
-        setError("Failed to load data from server");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [userId]);
+  // Recent Chat Summaries
+  const chatSummaries: ChatSummary[] = [
+    {
+      id: 1,
+      chatName: 'Police Control Room Group',
+      summary: 'Emergency dispatch reported multiple incidents in Sector B-4. Backup units deployed. All situations under control.',
+      lastSummarized: '10 min ago',
+      messageCount: 24,
+      priority: 'High',
+    },
+    {
+      id: 2,
+      chatName: 'Night Shift Coordination',
+      summary: 'Patrol reports completed for all sectors. Minor traffic violations recorded. No major incidents reported during night shift.',
+      lastSummarized: '2 hours ago',
+      messageCount: 12,
+      priority: 'Medium',
+    },
+    {
+      id: 3,
+      chatName: 'Traffic Management Unit',
+      summary: 'Road closure at Main Street resolved. Accident investigation completed. Traffic flow restored to normal.',
+      lastSummarized: '4 hours ago',
+      messageCount: 18,
+      priority: 'Medium',
+    },
+    {
+      id: 4,
+      chatName: 'Investigation Team',
+      summary: 'Evidence collection completed for Case #1247. Witness statements recorded. Report submitted for review.',
+      lastSummarized: '6 hours ago',
+      messageCount: 8,
+      priority: 'Low',
+    },
+  ];
 
-  // Handle refresh
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      const tasks = await fetchTasksByUser(userId);
-      const myTasks = tasks
-        .filter((task) => task.assignedTo._id === userId)
-        .map(mapBackendTaskToFrontend);
-      const assignedTasks = tasks
-        .filter((task) => task.assignedBy._id === userId)
-        .map(mapBackendTaskToFrontend);
-      setMyTasks(myTasks);
-      setAssignedTasks(assignedTasks);
-
-      const backendGroups = await fetchGroups();
-      const frontendGroups = backendGroups.map((group) =>
-        mapBackendGroupToFrontend(group, tasks)
-      );
-      setGroups(frontendGroups);
-    } catch (err) {
-      setError("Failed to refresh data");
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
+  // Team members
+  const teamMembers: TeamMember[] = [
+    { 
+      id: 1, 
+      name: 'Constable Sharma', 
+      rank: 'Police Constable',
+      badge: 'PC-2401',
+      status: 'On Duty',
+      currentTask: 'Patrol',
+      phone: '+91-9876543210',
+    },
+    { 
+      id: 2, 
+      name: 'Head Constable Patel', 
+      rank: 'Head Constable',
+      badge: 'HC-1205',
+      status: 'Available',
+      currentTask: 'Station Duty', 
+      phone: '+91-9876543211',
+    },
+    { 
+      id: 3, 
+      name: 'Constable Kumar', 
+      rank: 'Police Constable',
+      badge: 'PC-2402',
+      status: 'On Duty',
+      currentTask: 'Investigation',
+      phone: '+91-9876543212',
+    },
+    { 
+      id: 4, 
+      name: 'Constable Singh', 
+      rank: 'Police Constable',
+      badge: 'PC-2403',
+      status: 'On Leave',
+      currentTask: 'Off Duty',
+      phone: '+91-9876543213',
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">
-              Welcome back! Here's your task overview
-            </p>
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <Header currentDate={currentDate} />
+        <div className="flex-1 p-8 overflow-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-8">
+            <UserProfile profile={userProfile} />
+            <JuniorTaskStatus tasks={juniorTaskStatus} />
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm">
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing || loading}
-            >
-              <RefreshCw
-                className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </Button>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <MyAssignedTasks tasks={myAssignedTasks} />
+            <RecentChatSummaries summaries={chatSummaries} />
+            <TeamDirectory members={teamMembers} />
           </div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <Card className="bg-red-50 border-red-200">
-            <CardContent className="pt-6 text-red-800">{error}</CardContent>
-          </Card>
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <Card>
-            <CardContent className="pt-6 text-center">
-              Loading data...
-            </CardContent>
-          </Card>
-        )}
-
-        {!loading && (
-          <>
-            {/* Summary Panel */}
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Summary</CardTitle>
-                    <CardDescription>
-                      Your task overview across all groups
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Tabs
-                      value={activeFilter}
-                      onValueChange={(value: any) => setActiveFilter(value)}
-                    >
-                      <TabsList>
-                        <TabsTrigger value="today">Today</TabsTrigger>
-                        <TabsTrigger value="week">This Week</TabsTrigger>
-                        <TabsTrigger value="all">All</TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Group Tabs */}
-                <ScrollArea className="w-full whitespace-nowrap rounded-md border mb-4">
-                  <div className="flex w-max space-x-4 p-4">
-                    <Button
-                      variant={selectedGroup === "all" ? "default" : "outline"}
-                      onClick={() => setSelectedGroup("all")}
-                      className="flex-shrink-0"
-                    >
-                      All Groups
-                    </Button>
-                    {groups.map((group) => (
-                      <Button
-                        key={group.id}
-                        variant={
-                          selectedGroup === group.id ? "default" : "outline"
-                        }
-                        onClick={() => setSelectedGroup(group.id)}
-                        className="flex-shrink-0"
-                      >
-                        <div
-                          className={`w-3 h-3 rounded-full ${group.color} mr-2`}
-                        />
-                        {group.name}
-                        <Badge variant="secondary" className="ml-2">
-                          {group.taskCount}
-                        </Badge>
-                      </Button>
-                    ))}
-                  </div>
-                </ScrollArea>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-white p-4 rounded-lg border">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">
-                          Total Tasks
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {myTasks.length + assignedTasks.length}
-                        </p>
-                      </div>
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <Calendar className="w-5 h-5 text-blue-600" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg border">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">
-                          Completed
-                        </p>
-                        <p className="text-2xl font-bold text-green-600">
-                          {myTasks.filter((t) => t.status === "completed")
-                            .length +
-                            assignedTasks.filter(
-                              (t) => t.status === "completed"
-                            ).length}
-                        </p>
-                      </div>
-                      <div className="p-2 bg-green-100 rounded-lg">
-                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg border">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">
-                          Overdue
-                        </p>
-                        <p className="text-2xl font-bold text-red-600">
-                          {myTasks.filter((t) => t.status === "overdue")
-                            .length +
-                            assignedTasks.filter((t) => t.status === "overdue")
-                              .length}
-                        </p>
-                      </div>
-                      <div className="p-2 bg-red-100 rounded-lg">
-                        <AlertCircle className="w-5 h-5 text-red-600" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg border">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">
-                          In Progress
-                        </p>
-                        <p className="text-2xl font-bold text-blue-600">
-                          {myTasks.filter((t) => t.status === "in-progress")
-                            .length +
-                            assignedTasks.filter(
-                              (t) => t.status === "in-progress"
-                            ).length}
-                        </p>
-                      </div>
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <RefreshCw className="w-5 h-5 text-blue-600" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <TasksPanel
-                type="my-tasks"
-                tasks={myTasks}
-                selectedGroup={selectedGroup}
-                groups={groups}
-                activeFilter={activeFilter}
-                sortBy={sortBy}
-              />
-              <TasksPanel
-                type="assigned-tasks"
-                tasks={assignedTasks}
-                selectedGroup={selectedGroup}
-                groups={groups}
-                activeFilter={activeFilter}
-                sortBy={sortBy}
-              />
-            </div>
-
-            {/* Bottom Actions */}
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-wrap gap-4 justify-center">
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Settings className="w-4 h-4" />
-                    Edit My Rules
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Download className="w-4 h-4" />
-                    Export Summary
-                  </Button>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Bell className="w-4 h-4" />
-                    Notification Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
       </div>
     </div>
   );
-}
+};
+
+export default App;
